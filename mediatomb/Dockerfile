@@ -1,8 +1,13 @@
 
 FROM liveslak/slackware:base_x64_14.2
-MAINTAINER Diego Aguirre <aguirre@dagcs.com>
+LABEL org.opencontainers.image.authors="Diego Aguirre <aguirre@dagcs.com>"
 
 ENV MEDIATOMB_PORT=50500
+
+EXPOSE 50500/tcp
+EXPOSE 50500/udp
+EXPOSE 1900/tcp
+EXPOSE 1900/udp
 
 VOLUME /var/lib/mediatomb
 
