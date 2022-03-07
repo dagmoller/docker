@@ -17,6 +17,7 @@ http://localhost:50500
 ### Environment Variables
 
 * `MEDIATOMB_PORT` - Port to bind (default: 50500)
+* `MEDIATOMB_CONFIG` - Config filename (default: config-samsung.xml)
 
 ### Volumes
 

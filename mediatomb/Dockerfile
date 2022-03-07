@@ -3,6 +3,7 @@ FROM liveslak/slackware:base_x64_14.2
 LABEL org.opencontainers.image.authors="Diego Aguirre <aguirre@dagcs.com>"
 
 ENV MEDIATOMB_PORT=50500
+ENV MEDIATOMB_CONFIG=config-samsung.xml
 
 EXPOSE 50500/tcp
 EXPOSE 50500/udp
@@ -14,7 +15,7 @@ VOLUME /var/lib/mediatomb
 ENTRYPOINT /entrypoint.sh
 
 COPY *.t?z /root/
-
+COPY config-samsung.xml /etc/mediatomb/
 COPY entrypoint.sh /
 
 RUN \
