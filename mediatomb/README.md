@@ -1,6 +1,8 @@
 
 # Mediatomb for Samsung TVs
 
+[![Git Hub](https://img.shields.io/badge/github-dagmoller%2Fmediatomb-008bb8.svg)](https://github.com/dagmoller/docker/tree/main/mediatomb)
+
 This is a Mediatomb patched for Samsung TVs correct subtitles support.
 
 ## Usage:
