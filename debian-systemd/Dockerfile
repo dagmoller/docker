@@ -8,6 +8,10 @@
 ARG tag
 FROM debian:$tag
 
+ENV container=docker
+ENV LC_ALL=C
+ENV DEBIAN_FRONTEND=noninteractive
+
 STOPSIGNAL SIGRTMIN+3
 
 RUN apt-get update \
