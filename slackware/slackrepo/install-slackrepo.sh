@@ -23,7 +23,7 @@ wget $DOWNLOAD
 cd /
 installpkg /tmp/slackrepo*.t?z
 
-rm -rf /slackrepo* /tmp/slackrepo*.t?z
+rm -rf /slackrepo* /root/slackrepo* /tmp/slackrepo*.t?z
 
 ## Generate GPG
 cat > gen-key-script << EOF

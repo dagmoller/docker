@@ -1,8 +1,9 @@
 
 FROM slackware:full_x64_15.0
 
-COPY install-slackrepo.sh /root/
+COPY . .
 
+ENTRYPOINT /entrypoint.sh
 VOLUME /var/lib/slackrepo
 WORKDIR /root
 
@@ -12,7 +13,11 @@ ARG gpgName="Diego Aguirre"
 ARG gpgEmail="aguirre@dagcs.com"
 ARG rssTitle="DagMoller Slackware Packages"
 
-RUN chmod 755 /root/install-slackrepo.sh && \
-	/root/install-slackrepo.sh && \
-	rm -rf /root/install-slackrepo.sh
+RUN \
+	chmod 755 /entrypoint.sh && \
+	chmod 755 /install-slackrepo.sh && \
+	\
+	/install-slackrepo.sh && \
+	rm -rf /install-slackrepo.sh && \
+	rm -rf /Dockerfile
 
