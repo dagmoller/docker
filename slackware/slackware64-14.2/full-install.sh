@@ -17,6 +17,7 @@ slackpkg -default_answer=yes -batch=on install a/* ap/* d/* e/* f/* k/* kde/* l/
 
 # reinstall
 slackpkg -default_answer=yes -batch=on reinstall ca-certificates
+ldconfig
 
 find / -xdev -type f -name "*.new" -exec rename ".new" "" {} +
 
