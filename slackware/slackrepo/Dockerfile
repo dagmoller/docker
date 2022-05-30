@@ -1,5 +1,7 @@
 
-FROM slackware:full_x64_15.0
+ARG slackVer=15.0
+
+FROM slackware:full_x64_${slackVer}
 
 COPY . .
 
