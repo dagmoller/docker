@@ -8,7 +8,7 @@ This is a myvd (My Virtual Directory) docker image.
 ## Usage:
 
 ```shell
-docker run -v <local_path>:/etc/myvd -p 10983:10983 -itd dagmoller/mediatomb:0.12.1
+docker run -v <local_path>:/etc/myvd -p 10983:10983 -itd dagmoller/myvd:1.0.9
 ```
 
 ### Environment Variables
