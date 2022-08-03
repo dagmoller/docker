@@ -2,7 +2,7 @@
 
 defaultMirror=https://mirrors.slackware.com/slackware
 slackwareMirror=${slackwareMirror:-https://mirrors.slackware.com/slackware}
-slackwareVersion=${slackwareVersion:-slackware64-15.0}
+slackwareVersion=${slackwareVersion:-slackware64-14.2}
 
 sed 's/^WGETFLAGS=.*/WGETFLAGS="--passive-ftp --no-verbose --no-check-certificate"/g' -i /etc/slackpkg/slackpkg.conf;
 sed -e 's/^http//g' -i /etc/slackpkg/mirrors
