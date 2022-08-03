@@ -1,7 +1,7 @@
 
 # My Virtual Directory (myvd)
 
-[![Docker Hub](https://img.shields.io/badge/docker-dagmoller%2Fmediatomb-008bb8.svg)](https://registry.hub.docker.com/r/dagmoller/mediatomb/)
+[![Docker Hub](https://img.shields.io/badge/docker-dagmoller%2Fmyvd-008bb8.svg)](https://registry.hub.docker.com/r/dagmoller/myvd/)
 
 This is a myvd (My Virtual Directory) docker image.
 
