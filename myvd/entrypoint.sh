@@ -16,11 +16,3 @@ done
 cd $basepath/bin
 ./myvd.sh start
 
-logfile=$basepath/logs/myvd.log
-maxwait=5
-while [ $maxwait > 0 ]; do
-	test -f $logfile && break || sleep 1
-	maxwait=$(($maxwait - 1))
-done
-test -f $logfile && tail -f $logfile
-
