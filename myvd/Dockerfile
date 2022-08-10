@@ -19,8 +19,6 @@ RUN	apk add --no-cache $JRE_VERSION bash; \
 	cd /opt/myvd/bin && chmod 644 * && chmod 755 myvd.sh runserver.sh; \
 	cd /opt/myvd/bin && sed -e 's/2>&1 > \/dev\/null &//g' -i myvd.sh; \
 	cd /opt/myvd/conf && sed -e 's/<\/RollingFile>/<\/RollingFile>\n\t\t<Console name="server-log">\n\t\t\t<PatternLayout pattern="[%d][%t] %-5p %c{1} - %m%n" \/>\n\t\t<\/Console>/g' -i log4j2.xml; \
-	cd /opt/myvd && mv conf conf.default; \
-	ln -s /etc/myvd /opt/myvd/conf; \
 	chmod 755 /opt/entrypoint.sh
 
 ENTRYPOINT /opt/entrypoint.sh

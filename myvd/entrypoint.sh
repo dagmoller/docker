@@ -2,15 +2,15 @@
 
 basepath=/opt/myvd
 confpath=$basepath/conf
-confdefault=${confpath}.default
-confetc=/etc/myvd
+etcpath=/etc/myvd
 
-# Populate default config if not exists
-for item in $confdefault/*; do
+# Populate config path if file difers
+for item in $etcpath/*; do
 	name=$(basename $item)
-	if [ ! -e $confetc/$name ]; then
-		cp -rf $item $confetc/
+	if [ -e $confpath/$name ]; then
+		rm -rf $confpath/$name
 	fi
+	ln -s $item $confpath/$name
 done
 
 cd $basepath/bin
