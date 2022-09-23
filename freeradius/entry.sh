@@ -2,9 +2,10 @@
 
 echo 
 echo "Checking config path..."
+test -d /etc/raddb || mkdir /etc/raddb
 if [ ! -e /etc/raddb/radiusd.conf ]; then
 	echo "Populating /etc/raddb..."
-	cp -rf /etc/_raddb.default /etc/raddb
+	cp -a /etc/_raddb.default/* /etc/raddb/
 fi
 echo "Adjusting config files permissions..."
 chmod 755 /etc/raddb
