@@ -251,6 +251,10 @@ if [ $firstRun -eq 1 ]; then
 			comm=ldapadd
 		fi
 
+		if [ $(echo "$file" | grep -ic "tls") -gt 0 ] && [ "$LDAP_TLS" != "true" ]; then
+			continue
+		fi
+
 		if [ $(echo "$file" | grep -ic "replication") -gt 0 ]; then
 			if [ "$LDAP_REPLICATION" == "true" ]; then
 				srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
