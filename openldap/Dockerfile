@@ -6,6 +6,8 @@
 
 FROM alpine:3.16
 
+ARG ContainerVersion=1.0.0
+
 ADD openldap /opt/openldap
 
 ENV LDAP_DEBUG_LEVEL=256 \
@@ -42,5 +44,7 @@ RUN apk update; \
 	cd /etc/openldap; rm -rf ldap.conf slapd.conf slapd.ldif; \
 	\
 	chmod 755 /opt/openldap/entrypoint.sh
+
+EXPOSE 389 636
 
 ENTRYPOINT "/opt/openldap/entrypoint.sh"
