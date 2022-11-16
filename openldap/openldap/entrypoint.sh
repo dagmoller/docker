@@ -33,6 +33,10 @@ test -d $openldapSlapd && chown -R ldap.ldap $openldapSlapd || install -d -o lda
 test -d $openldapRun && chown -R ldap.ldap $openldapRun || install -d -o ldap -g ldap -m 0755 $openldapRun
 test -d $openldapCerts || install -d -o root -g root -m 0755 $openldapCerts
 
+chmod 755 $openldapData
+chmod 755 $openldapSlapd
+chmod 755 $openldapCerts
+
 if [ -z "$(ls -A $openldapData)" ]; then
 	log info "* OpenLDAP first run..."
 	firstRun=1
@@ -234,7 +238,7 @@ if [ $firstRun -eq 1 ]; then
 
 	# slapd always run first
 	log info "  - Processing $dstpath/slapd.ldif..." nw
-	out=$(slapadd -n 0 -F $openldapSlapd -l $dstpath/slapd.ldif 2>&1)
+	out=$(slapadd -d $LDAP_DEBUG_LEVEL -n 0 -F $openldapSlapd -l $dstpath/slapd.ldif 2>&1)
 	test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 
 	chown -R ldap.ldap $openldapSlapd
@@ -296,6 +300,7 @@ if [ $firstRun -eq 1 ]; then
 	done
 
 	rm -rf $dstpath
+	#sleep 3600
 
 	kill -9 $(pidof slapd)
 	sleep 1
@@ -371,8 +376,6 @@ fi
 
 log info "* Starting OpenLDAP..."
 export listenAddress=${LDAP_HOSTNAME:-$(hostname -f)}
-#test "$LDAP_TLS" == "true" && ldapS="ldaps://${listenAddress}/"
-#/usr/sbin/slapd -d $LDAP_DEBUG_LEVEL $ldapConfigParam -u ldap -g ldap -h "ldap://${listenAddress}/ $ldapS ldapi:/// ldap://localhost/ ldaps://localhost/"
 
 test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
 /usr/sbin/slapd -d $LDAP_DEBUG_LEVEL $ldapConfigParam -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
