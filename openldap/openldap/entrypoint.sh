@@ -24,7 +24,7 @@ containerCertsDefault=/opt/openldap/certs.default
 containerCerts=/opt/openldap/certs
 containerCertsOK=/opt/openldap/certs.ok
 
-containerCertsSubj="/C=BR/ST=Rio de Janeiro/O=Docker Container/OU=Docker"
+containerCertsSubj=$LDAP_TLS_CERT_SUBJ
 
 export containerCertsOK
 
@@ -81,9 +81,9 @@ if [ "$LDAP_TLS" == "true" ]; then
 	if [ $certSelfGenerated -eq 0 ]; then
 		if [ -f $providedCACert ] && [ -f $providedCertKey ] && [ -f $providedCertFile ]; then
 			log info "  - Using user provided server certificates..."
-			cp -rf $providedCACert $finalCACert
-			cp -rf $providedCertKey $finalCertKey
-			cp -rf $providedCertFile $finalCertFile
+			cp -f $providedCACert $finalCACert
+			cp -f $providedCertKey $finalCertKey
+			cp -f $providedCertFile $finalCertFile
 
 			chmod 644 $containerCertsOK/*
 			chmod 600 $finalCertKey
@@ -97,8 +97,8 @@ if [ "$LDAP_TLS" == "true" ]; then
 		caCertUseDefault=1
 		if [ -f $providedCACert ] && [ -f $providedCAKey ]; then
 			log info "  - Using user provided CA certificate and key..."
-			cp -rf $providedCACert $finalCACert
-			cp -rf $providedCAKey $finalCAKey
+			cp -f $providedCACert $finalCACert
+			cp -f $providedCAKey $finalCAKey
 			chmod 644 $finalCACert
 			chmod 600 $finalCAKey
 			caCertUseDefault=0
@@ -110,11 +110,11 @@ if [ "$LDAP_TLS" == "true" ]; then
 
 		# generate server certificates
 		if [ $caCertUseDefault -eq 1 ]; then
-			cp -rf $defaultRootCACert $buildCertPath/$(basename $finalCACert)
-			cp -rf $defaultRootCAKey $buildCertPath/$(basename $finalCAKey)
+			cp -f $defaultRootCACert $buildCertPath/$(basename $finalCACert)
+			cp -f $defaultRootCAKey $buildCertPath/$(basename $finalCAKey)
 		else
-			cp -rf $finalCACert $buildCertPath/
-			cp -rf $finalCAKey $buildCertPath/
+			cp -f $finalCACert $buildCertPath/
+			cp -f $finalCAKey $buildCertPath/
 		fi
 
 		cd $buildCertPath
@@ -127,8 +127,8 @@ if [ "$LDAP_TLS" == "true" ]; then
 		export serverCN=${LDAP_HOSTNAME:-$(hostname -f)}
 		export opensslCnf=openssl.cnf
 
-		cp -rf $containerCertsDefault/$serverExt $buildCertPath/
-		cp -rf $containerCertsDefault/$opensslCnf $buildCertPath/
+		cp -f $containerCertsDefault/$serverExt $buildCertPath/
+		cp -f $containerCertsDefault/$opensslCnf $buildCertPath/
 
 		log info "  - Building key and server signing request certificate..." nw
 		mkdir -p ./rootCA/newcerts
@@ -185,26 +185,26 @@ if [ "$LDAP_TLS" == "true" ]; then
 			-extensions req_ext -extfile ${serverExt}.ok -config $opensslCnf 2>&1)
 		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 
-		cp -rf $serverKey $providedCertKey &>/dev/null
-		cp -rf $serverCrt $providedCertFile &>/dev/null
+		cp -f $serverKey $providedCertKey &>/dev/null
+		cp -f $serverCrt $providedCertFile &>/dev/null
 
-		cp -rf $serverKey $finalCertKey
-		cp -rf $serverCrt $finalCertFile
+		cp -f $serverKey $finalCertKey
+		cp -f $serverCrt $finalCertFile
 
 		touch $containerCerts/server-certificate-self-generated &>/dev/null
 	fi
 
 	if [ -f $providedDHFile ]; then
 		log info "  - Using already existing DH params file..."
-		cp -rf $providedDHFile $finalDHFile
+		cp -f $providedDHFile $finalDHFile
 		chmod 644 $finalDHFile
 	else
 		log info "  - Building DH Params file..." nw
 		out=$(openssl dhparam -out $buildCertPath/$LDAP_TLS_DH_FILE 2048 2>&1)
 		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 
-		cp -rf $buildCertPath/$LDAP_TLS_DH_FILE $providedDHFile &>/dev/null
-		cp -rf $buildCertPath/$LDAP_TLS_DH_FILE $finalDHFile
+		cp -f $buildCertPath/$LDAP_TLS_DH_FILE $providedDHFile &>/dev/null
+		cp -f $buildCertPath/$LDAP_TLS_DH_FILE $finalDHFile
 	fi
 
 	chown ldap.ldap $containerCertsOK/*
