@@ -1,0 +1,16 @@
+dn: cn=config
+changetype: modify
+replace: olcTLSCACertificateFile
+olcTLSCACertificateFile: ${finalCACert}
+-
+replace: olcTLSCertificateFile
+olcTLSCertificateFile: ${finalCertFile}
+-
+replace: olcTLSCertificateKeyFile
+olcTLSCertificateKeyFile: ${finalCertKey}
+-
+replace: olcTLSDHParamFile
+olcTLSDHParamFile: ${finalDHFile}
+-
+replace: olcTLSVerifyClient
+olcTLSVerifyClient: ${LDAP_TLS_VERIFY_CLIENT}

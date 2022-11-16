@@ -1,0 +1,20 @@
+dn: cn=config
+changetype: modify
+replace: olcServerID
+${olcServerID}
+
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+replace: olcSyncrepl
+${olcSyncreplConfig}
+-
+replace: olcMirrorMode
+olcMirrorMode: TRUE
+
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+replace: olcSyncrepl
+${olcSyncreplDatabase}
+-
+replace: olcMirrorMode
+olcMirrorMode: TRUE

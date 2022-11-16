@@ -1,0 +1,6 @@
+
+dn: ${ldapBaseDN}
+objectclass: dcObject
+objectclass: organization
+o: ${LDAP_ORGANIZATION}
+dc: ${ldapDC}
