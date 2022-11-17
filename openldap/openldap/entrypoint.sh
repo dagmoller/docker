@@ -245,8 +245,7 @@ if [ $firstRun -eq 1 ]; then
 	rm -rf $dstpath/slapd.ldif
 
 	log info "  - Starting OpenLDAP for the first time..." nw
-	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:///" &
-	sleep 1
+	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:///"
 	test $? -eq 0 && log ok " OK"
 
 	for file in $dstpath/*.ldif; do
@@ -256,6 +255,10 @@ if [ $firstRun -eq 1 ]; then
 		fi
 
 		if [ $(echo "$file" | grep -ic "tls") -gt 0 ] && [ "$LDAP_TLS" != "true" ]; then
+			continue
+		fi
+
+		if [ $(echo "$file" | grep -ic "syncprov") -gt 0 ] && [ "$LDAP_REPLICATION" != "true" ]; then
 			continue
 		fi
 
@@ -287,6 +290,7 @@ if [ $firstRun -eq 1 ]; then
 					log info "  - Updating Replication Config..." nw
 					envsubst < $srcfile > $dstpath/$(basename $srcfile)
 					envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+
 					out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
 					test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 				fi
@@ -307,8 +311,7 @@ if [ $firstRun -eq 1 ]; then
 else
 	# make updates...
 	log info "* Starting OpenLDAP in background to make updates..." nw
-	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:/// ldap:///" &
-	sleep 1
+	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:/// ldap:///"
 	test $? -eq 0 && log ok " OK"
 
 	dstpath=/tmp/ldifs
@@ -375,7 +378,7 @@ if [ ! -f $ldapConf ]; then
 fi
 
 log info "* Starting OpenLDAP..."
-export listenAddress=${LDAP_HOSTNAME:-$(hostname -f)}
+log
 
 test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
 /usr/sbin/slapd -d $LDAP_DEBUG_LEVEL $ldapConfigParam -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
