@@ -262,6 +262,10 @@ if [ $firstRun -eq 1 ]; then
 			continue
 		fi
 
+		if [ $(echo "$file" | grep -ic "modify-passwords") -gt 0 ]; then
+			continue
+		fi
+
 		if [ $(echo "$file" | grep -ic "replication") -gt 0 ]; then
 			if [ "$LDAP_REPLICATION" == "true" ]; then
 				srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
@@ -356,6 +360,15 @@ else
 			out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif)
 			test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 		fi
+	fi
+
+	# update passwords
+	srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
+	if [ -f $srcfile ]; then
+		log info "  - Updating Passwords..." nw
+		envsubst < $srcfile > $dstpath/$(basename $srcfile)
+		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
+		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 	fi
 
 	rm -rf $dstpath
