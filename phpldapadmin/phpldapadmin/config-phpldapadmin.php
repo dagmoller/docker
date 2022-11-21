@@ -386,7 +386,7 @@ $servers->setValue('login','auth_type','${LDAPADMIN_AUTH_TYPE}');
 // $servers->setValue('server','tls_key',null);
 #  $servers->setValue('server','tls_key','/etc/pki/tls/private/ldap_user.key');
 
-if ({userTLS})
+if (${userTLS})
 {
 	$servers->setValue('server','tls',true);
 	$servers->setValue('server','tls_cacertdir','/etc/openldap/certs');
