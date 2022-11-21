@@ -50,7 +50,6 @@ fi
 
 # nginx
 log info "* Configuring nginx..."
-test -f /etc/nginx/http.d/default.conf && rm -rf /etc/nginx/http.d/default.conf
 envsubst '${LDAPADMIN_TLS_CERT_FILE},${LDAPADMIN_TLS_CERT_KEY}' < $basepath/nginx/phpldapadmin.conf > /etc/nginx/http.d/phpldapadmin.conf
 
 # phpldapadmin
