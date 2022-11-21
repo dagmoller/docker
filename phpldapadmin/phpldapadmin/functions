@@ -1,0 +1,31 @@
+#!/bin/sh
+
+function log
+{
+	RED="\e[31m"
+	GREEN="\e[32m"
+	YELLOW="\e[33m"
+	WHITE="\e[97m"
+	NC="\e[0m"
+
+	test "$3" == "nw" && opts="-en" || opts="-e"
+
+	case $1 in
+		error|ERROR|ERR)
+			echo $opts "${RED}$2${NC}"
+		;;
+		warn|warning|WARN|WARNING)
+			echo $opts "${YELLOW}$2${NC}"
+		;;
+		ok|OK|success|SUCCESS)
+			echo $opts "${GREEN}$2${NC}"
+		;;
+		info|INFO)
+			echo $opts "${WHITE}$2${NC}"
+		;;
+		*)
+			echo $opts "${1}"
+		;;
+	esac
+}
+
