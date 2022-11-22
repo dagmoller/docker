@@ -6,16 +6,17 @@ libpath=$basepath/lib
 etcpath=/etc/myvd
 
 # Populate config path if file difers
-for item in $etcpath/*; do
-	name=$(basename $item)
+for file in $(ls -A $etcpath); do
+	etcfile=$etcpath/$file
+	conffile=$confpath/$file
 
-	if [ -e $confpath/$name ]; then
-		rm -rf $confpath/$name
+	if [ -e $confpath/$file ]; then
+		rm -rf $confpath/$file
 	fi
-	ln -s $item $confpath/$name
+	ln -s $etcpath/$file $confpath/$file
 
 	if [ $(echo $name | grep -ic '.jar') -gt 0 ]; then
-		ln -s $item $libpath/$name
+		ln -s $etcpath/$file $libpath/$file
 	fi
 done
 

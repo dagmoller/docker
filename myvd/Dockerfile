@@ -2,7 +2,7 @@
 FROM alpine:3.16
 
 ENV JRE_VERSION=openjdk17-jre
-ENV MYVD_VERSION=1.0.16
+ENV MYVD_VERSION=1.0.17
 
 HEALTHCHECK CMD pidof java > /dev/null || exit 1
 
