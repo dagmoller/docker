@@ -228,6 +228,13 @@ if [ $firstRun -eq 1 ]; then
 		exit 99
 	fi
 
+	# process schemas
+	ldapSchemas=""
+	for schema in $LDAP_SCHEMAS; do
+		ldapSchemas="${ldapSchemas}include: file:///etc/openldap/schema/${schema}.ldif\n"
+	done
+	export ldapSchemas=$(echo -e "$ldapSchemas")
+
 	mkdir -p $dstpath
 
 	# processing files and variables

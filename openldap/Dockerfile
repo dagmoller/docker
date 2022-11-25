@@ -4,7 +4,7 @@
 # openssl genrsa -out default-ca.key 2048
 # openssl req -x509 -new -nodes -key default-ca.key -sha256 -days $((100*365)) -out default-ca.crt -subj "/C=BR/ST=Rio de Janeiro/O=Docker Container/OU=Docker/CN=docker"
 
-FROM alpine:3.16
+FROM alpine:3.14
 
 ARG ContainerVersion=1.0.0
 
@@ -16,6 +16,7 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_ADMIN_PASSWORD="admin" \
 	LDAP_CONFIG_PASSWORD="config" \
 	LDAP_READONLY_PASSWORD="readonly" \
+	LDAP_SCHEMAS="core cosine inetorgperson nis" \
 	\
 	LDAP_TLS="true" \
 	LDAP_TLS_CACERT="default-ca.crt" \
