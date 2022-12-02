@@ -77,6 +77,8 @@ olcDbDirectory:	/var/lib/openldap/data
 olcDbIndex: objectClass eq
 olcDbIndex: uid eq
 olcDbIndex: cn eq
+olcDbIndex: uidNumber eq
+olcDbIndex: gidNumber eq
 olcDbIndex: memberOf eq
 olcDbIndex: memberUid eq
 olcDbIndex: member eq
