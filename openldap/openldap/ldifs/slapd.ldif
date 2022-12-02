@@ -76,7 +76,7 @@ olcRootPW: ${ldapAdminPassword}
 olcDbDirectory:	/var/lib/openldap/data
 olcDbIndex: objectClass eq
 olcDbIndex: uid eq
-olcDbIndex: uid cn
+olcDbIndex: cn eq
 olcDbIndex: memberOf eq
 olcDbIndex: memberUid eq
 olcDbIndex: member eq
