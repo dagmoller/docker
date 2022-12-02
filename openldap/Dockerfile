@@ -6,7 +6,7 @@
 
 FROM alpine:3.14
 
-ARG ContainerVersion=1.0.0
+ARG ContainerVersion=1.0.1
 
 ADD openldap /opt/openldap
 
