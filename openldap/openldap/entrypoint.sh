@@ -33,6 +33,9 @@ test -d $openldapSlapd && chown -R ldap.ldap $openldapSlapd || install -d -o lda
 test -d $openldapRun && chown -R ldap.ldap $openldapRun || install -d -o ldap -g ldap -m 0755 $openldapRun
 test -d $openldapCerts || install -d -o root -g root -m 0755 $openldapCerts
 
+# clear $openldapRun
+rm -rf $openldapRun/*
+
 chmod 755 $openldapData
 chmod 755 $openldapSlapd
 chmod 755 $openldapCerts
@@ -319,8 +322,6 @@ if [ $firstRun -eq 1 ]; then
 
 	kill -9 $(pidof slapd)
 	sleep 1
-
-	rm -rf $openldapRun/*
 else
 	# make updates...
 	log info "* Starting OpenLDAP in background to make updates..." nw
@@ -385,8 +386,8 @@ else
 	kill -9 $(pidof slapd)
 	sleep 1
 
-	rm -rf $openldapRun/*
 fi
+rm -rf $openldapRun/*
 
 ldapConf=$openldapEtc/ldap.conf
 if [ ! -f $ldapConf ]; then
