@@ -325,7 +325,7 @@ if [ $firstRun -eq 1 ]; then
 else
 	# make updates...
 	log info "* Starting OpenLDAP in background to make updates..." nw
-	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:/// ldap:///"
+	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:///"
 	test $? -eq 0 && log ok " OK"
 
 	dstpath=/tmp/ldifs
