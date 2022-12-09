@@ -319,6 +319,8 @@ if [ $firstRun -eq 1 ]; then
 
 	kill -9 $(pidof slapd)
 	sleep 1
+
+	rm -rf $openldapRun/*
 else
 	# make updates...
 	log info "* Starting OpenLDAP in background to make updates..." nw
@@ -382,6 +384,8 @@ else
 
 	kill -9 $(pidof slapd)
 	sleep 1
+
+	rm -rf $openldapRun/*
 fi
 
 ldapConf=$openldapEtc/ldap.conf
