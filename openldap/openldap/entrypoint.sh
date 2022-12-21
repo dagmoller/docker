@@ -7,7 +7,7 @@ basepath=$(realpath $(dirname $0))
 
 log
 log info "## $(date) ##"
-log info "## $(slapd -V 2>&1 | head -n 1) ##"
+log info "## $(slapd -VV 2>&1 | head -n 1) ##"
 log
 
 # variables & paths
@@ -238,6 +238,11 @@ if [ $firstRun -eq 1 ]; then
 	done
 	export ldapSchemas=$(echo -e "$ldapSchemas")
 
+	# process extras
+	for extra in $LDAP_EXTRAS; do
+		sed -e "s/#${extra} //g" -i $srcpath/slapd.ldif
+	done
+
 	mkdir -p $dstpath
 
 	# processing files and variables
@@ -256,7 +261,7 @@ if [ $firstRun -eq 1 ]; then
 
 	log info "  - Starting OpenLDAP for the first time..." nw
 	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:///"
-	test $? -eq 0 && log ok " OK"
+	test $? -eq 0 && log ok " OK" || log error " Fail"
 
 	for file in $dstpath/*.ldif; do
 		comm=ldapmodify
@@ -325,8 +330,9 @@ if [ $firstRun -eq 1 ]; then
 else
 	# make updates...
 	log info "* Starting OpenLDAP in background to make updates..." nw
-	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:///"
-	test $? -eq 0 && log ok " OK"
+	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldap:/// ldapi:///"
+	st=$?
+	test $st -eq 0 && log ok " OK" || log error " Fail: (status: $st)\n"
 
 	dstpath=/tmp/ldifs
 	mkdir -p $dstpath
@@ -399,7 +405,6 @@ if [ ! -f $ldapConf ]; then
 		echo "TLS_CACERT $openldapCerts/$LDAP_TLS_CACERT" >> $ldapConf
 		echo "TLS_REQCERT $LDAP_TLS_VERIFY_CLIENT" >> $ldapConf
 	fi
-
 fi
 
 log info "* Starting OpenLDAP..."
@@ -407,3 +412,11 @@ log
 
 test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
 /usr/sbin/slapd -d $LDAP_DEBUG_LEVEL $ldapConfigParam -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
+
+lockfile=/tmp/openldap-maintenance-mode.lock
+if [ -f $lockfile ]; then
+	log
+	log warning "## Entering in Maintenance Mode ##"
+	log
+	sleep 3600
+fi

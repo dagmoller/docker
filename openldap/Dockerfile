@@ -17,6 +17,7 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_CONFIG_PASSWORD="config" \
 	LDAP_READONLY_PASSWORD="readonly" \
 	LDAP_SCHEMAS="core cosine inetorgperson nis" \
+	LDAP_EXTRAS="memberof refint" \
 	\
 	LDAP_TLS="true" \
 	LDAP_TLS_CACERT="default-ca.crt" \
@@ -45,6 +46,7 @@ RUN apk update; \
 	rm -rf /var/lib/openldap/openldap-data; \
 	cd /etc/openldap; rm -rf ldap.conf slapd.conf slapd.ldif; \
 	\
+	chmod 755 /opt/openldap/maintenance.sh; \
 	chmod 755 /opt/openldap/entrypoint.sh
 
 EXPOSE 389 636

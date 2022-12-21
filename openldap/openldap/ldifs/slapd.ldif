@@ -31,9 +31,9 @@ objectClass: olcModuleList
 cn: module
 olcModulepath:	/usr/lib/openldap
 olcModuleload:	back_mdb.so
-olcModuleload:	memberof.so
+#memberof olcModuleload:	memberof.so
 olcModuleload:	refint.so
-olcModuleload:	syncprov.so
+#refint olcModuleload:	syncprov.so
 
 dn: cn=schema,cn=config
 objectClass: olcSchemaConfig
@@ -79,9 +79,9 @@ olcDbIndex: uid eq
 olcDbIndex: cn eq
 olcDbIndex: uidNumber eq
 olcDbIndex: gidNumber eq
-olcDbIndex: memberOf eq
+#memberof olcDbIndex: memberOf eq
 olcDbIndex: memberUid eq
-olcDbIndex: member eq
+#memberof olcDbIndex: member eq
 olcDbIndex: entryCSN eq
 olcDbIndex: entryUUID eq
 olcLastMod: TRUE
@@ -98,24 +98,19 @@ olcAccess: {2}to *
   by dn="cn=readonly,${ldapBaseDN}" read
   by * none
 
-#dn: olcOverlay=syncprov,olcDatabase={1}mdb,cn=config
-#objectClass: olcOverlayConfig
-#objectClass: olcSyncProvConfig
-#olcOverlay: syncprov
+#memberof dn: olcOverlay=memberof,olcDatabase={1}mdb,cn=config
+#memberof objectClass: olcOverlayConfig
+#memberof objectClass: olcMemberOf
+#memberof olcOverlay: memberof
+#memberof olcMemberOfRefint: TRUE
 
-dn: olcOverlay=memberof,olcDatabase={1}mdb,cn=config
-objectClass: olcOverlayConfig
-objectClass: olcMemberOf
-olcOverlay: memberof
-olcMemberOfRefint: TRUE
-
-dn: olcOverlay=refint,olcDatabase={1}mdb,cn=config
-objectClass: olcConfig
-objectClass: olcOverlayConfig
-objectClass: olcRefintConfig
-objectClass: top
-olcOverlay: refint
-olcRefintAttribute: memberof
-olcRefintAttribute: member
-olcRefintAttribute: manager
-olcRefintAttribute: owner
+#refint dn: olcOverlay=refint,olcDatabase={1}mdb,cn=config
+#refint objectClass: olcConfig
+#refint objectClass: olcOverlayConfig
+#refint objectClass: olcRefintConfig
+#refint objectClass: top
+#refint olcOverlay: refint
+#memberof #refint olcRefintAttribute: memberof
+#memberof #refint olcRefintAttribute: member
+#refint olcRefintAttribute: manager
+#refint olcRefintAttribute: owner
