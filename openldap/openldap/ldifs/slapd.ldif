@@ -22,18 +22,17 @@ olcPidFile: /var/lib/openldap/run/slapd.pid
 #	Require 64-bit encryption for simple bind
 #olcSecurity: ssf=1 update_ssf=112 simple_bind=64
 
-
 #
 # Load dynamic backend modules:
 #
 dn: cn=module,cn=config
 objectClass: olcModuleList
 cn: module
-olcModulepath:	/usr/lib/openldap
-olcModuleload:	back_mdb.so
-#memberof olcModuleload:	memberof.so
-olcModuleload:	refint.so
-#refint olcModuleload:	syncprov.so
+olcModulepath: /usr/lib/openldap
+olcModuleload: back_mdb.so
+olcModuleload: memberof.so
+olcModuleload: refint.so
+olcModuleload: syncprov.so
 
 dn: cn=schema,cn=config
 objectClass: olcSchemaConfig
@@ -57,11 +56,6 @@ olcAccess: {0}to *  by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,
 olcRootDN: cn=admin,cn=config
 olcRootPW: ${ldapConfigPassword}
 
-#dn: olcOverlay=syncprov,olcDatabase={0}config,cn=config
-#objectClass: olcOverlayConfig
-#objectClass: olcSyncProvConfig
-#olcOverlay: syncprov
-
 #######################################################################
 # LMDB database definitions
 #######################################################################
@@ -79,9 +73,9 @@ olcDbIndex: uid eq
 olcDbIndex: cn eq
 olcDbIndex: uidNumber eq
 olcDbIndex: gidNumber eq
-#memberof olcDbIndex: memberOf eq
+olcDbIndex: memberOf eq
 olcDbIndex: memberUid eq
-#memberof olcDbIndex: member eq
+olcDbIndex: member eq
 olcDbIndex: entryCSN eq
 olcDbIndex: entryUUID eq
 olcLastMod: TRUE
@@ -110,7 +104,7 @@ olcAccess: {2}to *
 #refint objectClass: olcRefintConfig
 #refint objectClass: top
 #refint olcOverlay: refint
-#memberof #refint olcRefintAttribute: memberof
-#memberof #refint olcRefintAttribute: member
+#refint olcRefintAttribute: memberof
+#refint olcRefintAttribute: member
 #refint olcRefintAttribute: manager
 #refint olcRefintAttribute: owner
