@@ -4,7 +4,14 @@
 # openssl genrsa -out default-ca.key 2048
 # openssl req -x509 -new -nodes -key default-ca.key -sha256 -days $((100*365)) -out default-ca.crt -subj "/C=BR/ST=Rio de Janeiro/O=Docker Container/OU=Docker/CN=docker"
 
-FROM alpine:3.14
+#
+# Alpine 3.14 + OpenLDAP 2.4.58
+# Alpine 3.17 + OpenLDAP 2.6.3
+#
+
+ARG AlpineVersion=3.14
+
+FROM alpine:${AlpineVersion}
 
 ARG ContainerVersion=1.0.1
 
