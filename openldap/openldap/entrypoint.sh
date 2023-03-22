@@ -13,6 +13,7 @@ log
 # variables & paths
 firstRun=0
 
+openldapReady=/tmp/openldap-ready
 openldapEtc=/etc/openldap
 openldapData=/var/lib/openldap/data
 openldapRun=/var/lib/openldap/run
@@ -34,6 +35,7 @@ test -d $openldapRun && chown -R ldap.ldap $openldapRun || install -d -o ldap -g
 test -d $openldapCerts || install -d -o root -g root -m 0755 $openldapCerts
 
 # clear $openldapRun
+rm -rf $openldapReady
 rm -rf $openldapRun/*
 
 chmod 755 $openldapData
@@ -394,6 +396,8 @@ else
 
 fi
 rm -rf $openldapRun/*
+
+echo 1 > $openldapReady
 
 ldapConf=$openldapEtc/ldap.conf
 if [ ! -f $ldapConf ]; then
