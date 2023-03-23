@@ -25,6 +25,8 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_READONLY_PASSWORD="readonly" \
 	LDAP_SCHEMAS="core cosine inetorgperson nis" \
 	LDAP_EXTRAS="memberof refint" \
+	LDAP_IDLE_TIMEOUT="0" \
+	LDAP_WRITE_TIMEOUT="0" \
 	\
 	LDAP_TLS="true" \
 	LDAP_TLS_CACERT="default-ca.crt" \

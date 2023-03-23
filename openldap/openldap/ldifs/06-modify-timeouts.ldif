@@ -1,0 +1,8 @@
+
+dn: cn=config
+changetype: modify
+replace: olcIdleTimeout
+olcIdleTimeout: ${ldapIdleTimeout}
+-
+replace: olcWriteTimeout
+olcWriteTimeout: ${ldapWriteTimeout}

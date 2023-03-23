@@ -54,6 +54,9 @@ export ldapAdminPassword="$(slappasswd -s "$LDAP_ADMIN_PASSWORD")"
 export ldapConfigPassword="$(slappasswd -s "$LDAP_CONFIG_PASSWORD")"
 export ldapReadonlyPassword="$(slappasswd -s "$LDAP_READONLY_PASSWORD")"
 
+export ldapIdleTimeout=$LDAP_IDLE_TIMEOUT
+export ldapWriteTimeout=$LDAP_WRITE_TIMEOUT
+
 LDAP_TLS=$(echo "$LDAP_TLS" | tr '[:upper:]' '[:lower:]')
 LDAP_REPLICATION=$(echo "$LDAP_REPLICATION" | tr '[:upper:]' '[:lower:]')
 if [ "$LDAP_TLS" == "true" ]; then
@@ -384,6 +387,15 @@ else
 	srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
 	if [ -f $srcfile ]; then
 		log info "  - Updating Passwords..." nw
+		envsubst < $srcfile > $dstpath/$(basename $srcfile)
+		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
+		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+	fi
+
+	# update timeouts
+	srcfile=/opt/openldap/ldifs/06-modify-timeouts.ldif
+	if [ -f $srcfile ]; then
+		log info "  - Updating Timeouts..." nw
 		envsubst < $srcfile > $dstpath/$(basename $srcfile)
 		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
 		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
