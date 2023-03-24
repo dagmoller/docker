@@ -23,6 +23,7 @@ olcPidFile: /var/lib/openldap/run/slapd.pid
 #olcSecurity: ssf=1 update_ssf=112 simple_bind=64
 olcIdleTimeout: ${ldapIdleTimeout}
 olcWriteTimeout: ${ldapWriteTimeout}
+#threads olcThreads: ${ldapThreads}
 
 #
 # Load dynamic backend modules:

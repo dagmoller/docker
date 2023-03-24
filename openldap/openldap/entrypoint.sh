@@ -57,6 +57,8 @@ export ldapReadonlyPassword="$(slappasswd -s "$LDAP_READONLY_PASSWORD")"
 export ldapIdleTimeout=$LDAP_IDLE_TIMEOUT
 export ldapWriteTimeout=$LDAP_WRITE_TIMEOUT
 
+export ldapThreads=$LDAP_THREADS
+
 LDAP_TLS=$(echo "$LDAP_TLS" | tr '[:upper:]' '[:lower:]')
 LDAP_REPLICATION=$(echo "$LDAP_REPLICATION" | tr '[:upper:]' '[:lower:]')
 if [ "$LDAP_TLS" == "true" ]; then
@@ -243,6 +245,11 @@ if [ $firstRun -eq 1 ]; then
 	done
 	export ldapSchemas=$(echo -e "$ldapSchemas")
 
+	# threads
+	if [ ! -z "$ldapThreads" ]; then
+		sed -e "s/#threads //g" -i $srcpath/slapd.ldif
+	fi
+
 	# process extras
 	for extra in $LDAP_EXTRAS; do
 		sed -e "s/#${extra} //g" -i $srcpath/slapd.ldif
@@ -283,6 +290,14 @@ if [ $firstRun -eq 1 ]; then
 		fi
 
 		if [ $(echo "$file" | grep -ic "modify-passwords") -gt 0 ]; then
+			continue
+		fi
+
+		if [ $(echo "$file" | grep -ic "modify-timeouts") -gt 0 ]; then
+			continue
+		fi
+
+		if [ $(echo "$file" | grep -ic "modify-threads") -gt 0 ]; then
 			continue
 		fi
 
@@ -396,6 +411,16 @@ else
 	srcfile=/opt/openldap/ldifs/06-modify-timeouts.ldif
 	if [ -f $srcfile ]; then
 		log info "  - Updating Timeouts..." nw
+		envsubst < $srcfile > $dstpath/$(basename $srcfile)
+		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
+		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+	fi
+
+	# update threads
+	srcfile=/opt/openldap/ldifs/07-modify-threads.ldif
+	test -z "$ldapThreads" && rm -rf $srcfile
+	if [ -f $srcfile ]; then
+		log info "  - Updating Threads..." nw
 		envsubst < $srcfile > $dstpath/$(basename $srcfile)
 		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
 		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"

@@ -27,6 +27,7 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_EXTRAS="memberof refint" \
 	LDAP_IDLE_TIMEOUT="0" \
 	LDAP_WRITE_TIMEOUT="0" \
+	LDAP_THREADS="" \
 	\
 	LDAP_TLS="true" \
 	LDAP_TLS_CACERT="default-ca.crt" \
