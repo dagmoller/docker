@@ -1,6 +1,7 @@
 #!/bin/sh
 
 basepath=$(realpath $(dirname $0))
+phpfpm=php-fpm81
 
 # source functions
 . $basepath/functions
@@ -66,7 +67,7 @@ fi
 
 # start services
 log info "* Starting php-fpm in background..." nw
-out=$(php-fpm8)
+out=$($phpfpm)
 test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 
 log info "* Starting nginx in foreground..."

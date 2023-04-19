@@ -326,6 +326,16 @@ if [ $firstRun -eq 1 ]; then
 					export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
 					export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
 
+					export olcMirrorModeConfig="FALSE"
+					if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+						export olcMirrorModeConfig="TRUE"
+					fi
+
+					export olcMirrorModeDatabase="FALSE"
+					if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+						export olcMirrorModeDatabase="TRUE"
+					fi
+
 					log info "  - Updating Replication Config..." nw
 					envsubst < $srcfile > $dstpath/$(basename $srcfile)
 					envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
@@ -389,6 +399,16 @@ else
 			export olcServerID="$(echo -e ${olcServerID::-2})"
 			export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
 			export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
+
+			export olcMirrorModeConfig="FALSE"
+			if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+				export olcMirrorModeConfig="TRUE"
+			fi
+
+			export olcMirrorModeDatabase="FALSE"
+			if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+				export olcMirrorModeDatabase="TRUE"
+			fi
 
 			log info "  - Updating Replication Config..." nw
 			envsubst < $srcfile > $dstpath/$(basename $srcfile)

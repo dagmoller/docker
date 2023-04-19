@@ -41,7 +41,9 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	\
 	LDAP_REPLICATION="false" \
 	LDAP_REPLICATION_CONFIG_SYNCPROV="binddn=\"cn=admin,cn=config\" bindmethod=simple credentials=\${LDAP_CONFIG_PASSWORD} searchbase=\"cn=config\" type=refreshAndPersist retry=\"60 +\" timeout=1 starttls=yes tls_reqcert=try" \
+	LDAP_REPLICATION_CONFIG_MIRROR_MODE="false" \
 	LDAP_REPLICATION_DB_SYNCPROV="binddn=\"cn=admin,\${ldapBaseDN}\" bindmethod=simple credentials=\${LDAP_ADMIN_PASSWORD} searchbase=\"\${ldapBaseDN}\" type=refreshAndPersist interval=00:00:00:10 retry=\"60 +\" timeout=1 starttls=yes tls_reqcert=try" \
+	LDAP_REPLICATION_DB_MIRROR_MODE="false" \
 	LDAP_REPLICATION_HOSTS=""
 
 RUN apk update; \
