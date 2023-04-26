@@ -34,7 +34,9 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_TLS_CACERT_KEY="default-ca.key" \
 	LDAP_TLS_CERT_FILE="openldap.crt" \
 	LDAP_TLS_CERT_KEY="openldap.key" \
+	LDAP_TLS_CRL_FILE="openldap.crl" \
 	LDAP_TLS_DH_FILE="dhparams.pem" \
+	LDAP_TLS_CRL_CHECK="all" \
 	LDAP_TLS_VERIFY_CLIENT="try" \
 	LDAP_TLS_CERT_SUBJ="/C=BR/ST=Rio de Janeiro/O=Docker Container/OU=Docker" \
 	LDAP_TLS_ALTNAMES="" \

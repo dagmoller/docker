@@ -18,7 +18,7 @@ openldapEtc=/etc/openldap
 openldapData=/var/lib/openldap/data
 openldapRun=/var/lib/openldap/run
 openldapSlapd=/etc/openldap/slapd.d
-openldapCerts=/etc/openldap/certs
+export openldapCerts=/etc/openldap/certs
 
 containerLdapConfDefault=/opt/openldap/ldap.default
 containerCertsDefault=/opt/openldap/certs.default
@@ -73,12 +73,14 @@ if [ "$LDAP_TLS" == "true" ]; then
 	providedCAKey=$containerCerts/$LDAP_TLS_CACERT_KEY
 	providedCertKey=$containerCerts/$LDAP_TLS_CERT_KEY
 	providedCertFile=$containerCerts/$LDAP_TLS_CERT_FILE
+	providedCrlFile=$containerCerts/$LDAP_TLS_CRL_FILE
 	providedDHFile=$containerCerts/$LDAP_TLS_DH_FILE
 
 	export finalCACert=$containerCertsOK/$LDAP_TLS_CACERT
 	export finalCAKey=$containerCertsOK/$LDAP_TLS_CACERT_KEY
 	export finalCertKey=$containerCertsOK/$LDAP_TLS_CERT_KEY
 	export finalCertFile=$containerCertsOK/$LDAP_TLS_CERT_FILE
+	export finalCrlFile=$containerCertsOK/$LDAP_TLS_CRL_FILE
 	export finalDHFile=$containerCertsOK/$LDAP_TLS_DH_FILE
 
 	buildCertPath=$(mktemp -d)
@@ -204,6 +206,12 @@ if [ "$LDAP_TLS" == "true" ]; then
 		touch $containerCerts/server-certificate-self-generated &>/dev/null
 	fi
 
+	if [ -f $providedCrlFile ]; then
+		log info "  - Using already existing CRL Certificate file..."
+		cp -f $providedCrlFile $finalCrlFile
+		chmod 644 $finalCrlFile
+	fi
+
 	if [ -f $providedDHFile ]; then
 		log info "  - Using already existing DH params file..."
 		cp -f $providedDHFile $finalDHFile
@@ -220,7 +228,8 @@ if [ "$LDAP_TLS" == "true" ]; then
 	chown ldap.ldap $containerCertsOK/*
 
 	rm -rf $openldapCerts/*
-	ln -s $finalCACert $openldapCerts/
+	test -f $finalCACert && ln -s $finalCACert $openldapCerts/
+	test -f $finalCrlFile && ln -s $finalCrlFile $openldapCerts/
 	cd $openldapCerts
 	c_rehash . &> /dev/null
 
@@ -272,7 +281,7 @@ if [ $firstRun -eq 1 ]; then
 	rm -rf $dstpath/slapd.ldif
 
 	log info "  - Starting OpenLDAP for the first time..." nw
-	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldapi:///"
+	/usr/sbin/slapd -u ldap -g ldap -h "ldapi:///"
 	test $? -eq 0 && log ok " OK" || log error " Fail"
 
 	for file in $dstpath/*.ldif; do
@@ -360,7 +369,10 @@ if [ $firstRun -eq 1 ]; then
 else
 	# make updates...
 	log info "* Starting OpenLDAP in background to make updates..." nw
-	/usr/sbin/slapd -F $openldapSlapd -u ldap -g ldap -h "ldap:/// ldapi:///"
+
+	test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
+    /usr/sbin/slapd -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
+
 	st=$?
 	test $st -eq 0 && log ok " OK" || log error " Fail: (status: $st)\n"
 
@@ -413,7 +425,7 @@ else
 			log info "  - Updating Replication Config..." nw
 			envsubst < $srcfile > $dstpath/$(basename $srcfile)
 			envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
-			out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif)
+			out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
 			test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 		fi
 	fi
@@ -422,9 +434,13 @@ else
 	srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
 	if [ -f $srcfile ]; then
 		log info "  - Updating Passwords..." nw
-		envsubst < $srcfile > $dstpath/$(basename $srcfile)
-		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
-		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+		for i in $(seq 0 25); do
+            envsubst < $srcfile > $dstpath/$(basename $srcfile)
+            out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
+            ret=$?
+            test $ret -eq 0 && break || sleep 0.5
+		done
+		test $ret -eq 0 && log ok " OK" || log error " Fail: \n$out"
 	fi
 
 	# update timeouts
@@ -432,7 +448,7 @@ else
 	if [ -f $srcfile ]; then
 		log info "  - Updating Timeouts..." nw
 		envsubst < $srcfile > $dstpath/$(basename $srcfile)
-		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
+		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
 		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 	fi
 
@@ -442,7 +458,7 @@ else
 	if [ -f $srcfile ]; then
 		log info "  - Updating Threads..." nw
 		envsubst < $srcfile > $dstpath/$(basename $srcfile)
-		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile))
+		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
 		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 	fi
 
@@ -472,7 +488,7 @@ log info "* Starting OpenLDAP..."
 log
 
 test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
-/usr/sbin/slapd -d $LDAP_DEBUG_LEVEL $ldapConfigParam -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
+/usr/sbin/slapd -d $LDAP_DEBUG_LEVEL -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
 
 lockfile=/tmp/openldap-maintenance-mode.lock
 if [ -f $lockfile ]; then

@@ -1,7 +1,7 @@
 dn: cn=config
 changetype: modify
-replace: olcTLSCACertificateFile
-olcTLSCACertificateFile: ${finalCACert}
+replace: olcTLSCACertificatePath
+olcTLSCACertificatePath: ${openldapCerts}
 -
 replace: olcTLSCertificateFile
 olcTLSCertificateFile: ${finalCertFile}
@@ -14,3 +14,6 @@ olcTLSDHParamFile: ${finalDHFile}
 -
 replace: olcTLSVerifyClient
 olcTLSVerifyClient: ${LDAP_TLS_VERIFY_CLIENT}
+-
+replace: olcTLSCRLCheck
+olcTLSCRLCheck: ${LDAP_TLS_CRL_CHECK}
