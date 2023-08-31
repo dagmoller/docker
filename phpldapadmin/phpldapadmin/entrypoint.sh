@@ -62,7 +62,7 @@ else
 	test -z "$LDAPADMIN_TIMEZONE" && export userTimezone=0 || export userTimezone=1
 	test -z "$LDAPADMIN_BASEDN" && export userBaseDN=0 || export userBaseDN=1
 
-	envsubst '${userTimezone},${LDAPADMIN_TIMEZONE},${LDAPADMIN_SERVER_NAME},${LDAPADMIN_SERVER_ADDRESS},${LDAPADMIN_SERVER_PORT},${userBaseDN},${LDAPADMIN_BASEDN},${LDAPADMIN_AUTH_TYPE},${userTLS}' < $basepath/config-phpldapadmin.php > /etc/phpldapadmin/config.php
+	envsubst '${userTimezone},${LDAPADMIN_TIMEZONE},${LDAPADMIN_SERVER_NAME},${LDAPADMIN_SERVER_ADDRESS},${LDAPADMIN_SERVER_PORT},${userBaseDN},${LDAPADMIN_BASEDN},${LDAPADMIN_AUTH_TYPE},${userTLS},${LDAPADMIN_MIN_UIDNUMBER},${LDAPADMIN_MIN_GIDNUMBER}' < $basepath/config-phpldapadmin.php > /etc/phpldapadmin/config.php
 fi
 
 # start services

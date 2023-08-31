@@ -248,6 +248,15 @@ if [ $firstRun -eq 1 ]; then
 	fi
 
 	# process schemas
+	cp -rf /opt/openldap/schemas/* /etc/openldap/schema/
+
+	if [ "$(echo $LDAP_GROUP_MEMBER_SET_MAY | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+		sed '424s/( member $ cn )/cn/' -i /etc/openldap/schema/core.ldif
+		sed '425s/businessCategory/member $ businessCategory/' -i /etc/openldap/schema/core.ldif
+		sed '476s/( uniqueMember $ cn )/cn/' -i /etc/openldap/schema/core.ldif
+		sed '477s/businessCategory/uniqueMember $ businessCategory/' -i /etc/openldap/schema/core.ldif
+	fi
+
 	ldapSchemas=""
 	for schema in $LDAP_SCHEMAS; do
 		ldapSchemas="${ldapSchemas}include: file:///etc/openldap/schema/${schema}.ldif\n"

@@ -25,6 +25,7 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_READONLY_PASSWORD="readonly" \
 	LDAP_SCHEMAS="core cosine inetorgperson nis" \
 	LDAP_EXTRAS="memberof refint" \
+	LDAP_GROUP_MEMBER_SET_MAY="false" \
 	LDAP_IDLE_TIMEOUT="0" \
 	LDAP_WRITE_TIMEOUT="0" \
 	LDAP_THREADS="" \

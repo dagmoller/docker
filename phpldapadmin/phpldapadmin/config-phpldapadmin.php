@@ -512,7 +512,7 @@ if (${userTLS})
 
 /* The minimum number to use when searching for the next available number
    (only when 'search' is used for auto_number. */
-// $servers->setValue('auto_number','min',array('uidNumber'=>1000,'gidNumber'=>500));
+$servers->setValue('auto_number','min',array('uidNumber'=>${LDAPADMIN_MIN_UIDNUMBER},'gidNumber'=>${LDAPADMIN_MIN_GIDNUMBER}));
 
 /* If you set this, then phpldapadmin will bind to LDAP with this user ID when
    searching for the uidnumber. The idea is, this user id would have full
