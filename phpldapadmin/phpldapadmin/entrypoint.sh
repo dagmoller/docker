@@ -65,6 +65,12 @@ else
 	envsubst '${userTimezone},${LDAPADMIN_TIMEZONE},${LDAPADMIN_SERVER_NAME},${LDAPADMIN_SERVER_ADDRESS},${LDAPADMIN_SERVER_PORT},${userBaseDN},${LDAPADMIN_BASEDN},${LDAPADMIN_AUTH_TYPE},${userTLS},${LDAPADMIN_MIN_UIDNUMBER},${LDAPADMIN_MIN_GIDNUMBER}' < $basepath/config-phpldapadmin.php > /etc/phpldapadmin/config.php
 fi
 
+if [ "$(echo $LDAPADMIN_DISABLE_DSAIT | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+	log info "  - Disabling ManageDSA It..."
+	sed '238s#\(.*\)#//\1#' -i /usr/share/webapps/phpldapadmin/lib/ds_ldap.php
+	sed '239s#\(.*\)#//\1#' -i /usr/share/webapps/phpldapadmin/lib/ds_ldap.php
+fi
+
 # start services
 log info "* Starting php-fpm in background..." nw
 out=$($phpfpm)
