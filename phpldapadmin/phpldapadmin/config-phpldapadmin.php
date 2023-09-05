@@ -658,9 +658,10 @@ $servers->setValue('server','force_may',array('uidNumber','gidNumber','sambaSID'
  * IMPORTANT: Select reCAPTCHA v2   on  Type of reCAPTCHA                          *
  ***********************************************************************************/
 
-
 $config->custom->session['reCAPTCHA-enable'] = false;
 $config->custom->session['reCAPTCHA-key-site'] = '<put-here-key-site>';
 $config->custom->session['reCAPTCHA-key-server'] = '<put-here-key-server>';
+
+${LDAPADMIN_EXTRA_CONFIGS}
 
 ?>
