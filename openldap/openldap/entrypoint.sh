@@ -47,6 +47,9 @@ if [ -z "$(ls -A $openldapData)" ]; then
 	firstRun=1
 fi
 
+tlsEnabled=$(getBoolean $LDAP_TLS)
+noUpdate=$(getBoolean $LDAP_NOUPDATE)
+
 log info "* Processing environment variables..."
 export ldapBaseDN="dc=${LDAP_DOMAIN//\./,dc=}"
 export ldapDC="${LDAP_DOMAIN%%.*}"
@@ -54,14 +57,7 @@ export ldapAdminPassword="$(slappasswd -s "$LDAP_ADMIN_PASSWORD")"
 export ldapConfigPassword="$(slappasswd -s "$LDAP_CONFIG_PASSWORD")"
 export ldapReadonlyPassword="$(slappasswd -s "$LDAP_READONLY_PASSWORD")"
 
-export ldapIdleTimeout=$LDAP_IDLE_TIMEOUT
-export ldapWriteTimeout=$LDAP_WRITE_TIMEOUT
-
-export ldapThreads=$LDAP_THREADS
-
-LDAP_TLS=$(echo "$LDAP_TLS" | tr '[:upper:]' '[:lower:]')
-LDAP_REPLICATION=$(echo "$LDAP_REPLICATION" | tr '[:upper:]' '[:lower:]')
-if [ "$LDAP_TLS" == "true" ]; then
+if [ $tlsEnabled -eq 1 ]; then
 	log info "* Processing TLS Options..."
 	test -d $containerCertsOK && rm -rf $containerCertsOK
 	mkdir -p $containerCertsOK
@@ -250,7 +246,7 @@ if [ $firstRun -eq 1 ]; then
 	# process schemas
 	cp -rf /opt/openldap/schemas/* /etc/openldap/schema/
 
-	if [ "$(echo $LDAP_GROUP_MEMBER_SET_MAY | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+	if [ $(getBoolean $LDAP_GROUP_MEMBER_SET_MAY) -eq 1 ]; then
 		sed '424s/( member $ cn )/cn/' -i /etc/openldap/schema/core.ldif
 		sed '425s/businessCategory/member $ businessCategory/' -i /etc/openldap/schema/core.ldif
 		sed '476s/( uniqueMember $ cn )/cn/' -i /etc/openldap/schema/core.ldif
@@ -262,11 +258,6 @@ if [ $firstRun -eq 1 ]; then
 		ldapSchemas="${ldapSchemas}include: file:///etc/openldap/schema/${schema}.ldif\n"
 	done
 	export ldapSchemas=$(echo -e "$ldapSchemas")
-
-	# threads
-	if [ ! -z "$ldapThreads" ]; then
-		sed -e "s/#threads //g" -i $srcpath/slapd.ldif
-	fi
 
 	# process extras
 	for extra in $LDAP_EXTRAS; do
@@ -303,7 +294,11 @@ if [ $firstRun -eq 1 ]; then
 			continue
 		fi
 
-		if [ $(echo "$file" | grep -ic "syncprov") -gt 0 ] && [ "$LDAP_REPLICATION" != "true" ]; then
+		if [ $(echo "$file" | grep -ic "syncprov-config") -gt 0 ] && [ "$LDAP_REPLICATION_CONFIG" != "true" ]; then
+			continue
+		fi
+
+		if [ $(echo "$file" | grep -ic "syncprov-db") -gt 0 ] && [ "$LDAP_REPLICATION_DB" != "true" ]; then
 			continue
 		fi
 
@@ -311,50 +306,43 @@ if [ $firstRun -eq 1 ]; then
 			continue
 		fi
 
-		if [ $(echo "$file" | grep -ic "modify-timeouts") -gt 0 ]; then
-			continue
-		fi
-
-		if [ $(echo "$file" | grep -ic "modify-threads") -gt 0 ]; then
-			continue
-		fi
-
 		if [ $(echo "$file" | grep -ic "replication") -gt 0 ]; then
-			if [ "$LDAP_REPLICATION" == "true" ]; then
-				srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
+			if [ $(echo "$file" | grep -ic "replication-config") -gt 0 ] && [ $(getBoolean $LDAP_REPLICATION_CONFIG) -eq 1 ]; then
+				srcfile=/opt/openldap/ldifs/02-modify-replication-config.ldif
 				if [ -f $srcfile ]; then
 					dstpath=/tmp/ldifs
 					mkdir -p $dstpath
 
+					if [ "${LDAP_REPLICATION_CONFIG_SYNCPROV}" == "" ]; then
+						continue
+					fi
+
 					olcServerID=
 					olcSyncreplConfig=""
-					olcSyncreplDatabase=""
+
 					idx=1
-					for replicationHost in $LDAP_REPLICATION_HOSTS; do
+					for replicationHost in $LDAP_REPLICATION_CONFIG_HOSTS; do
 						olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
 
 						sIdx=$(($idx + 100))
 						olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
-						olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
 
 						idx=$(($idx + 1))
 					done
 
+					if [ "$olcSyncreplConfig" == "" ]; then
+						continue
+					fi
+
 					export olcServerID="$(echo -e ${olcServerID::-2})"
 					export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
-					export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
 
 					export olcMirrorModeConfig="FALSE"
-					if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+					if [ $(getBoolean $LDAP_REPLICATION_CONFIG_MIRROR_MODE) -eq 1 ]; then
 						export olcMirrorModeConfig="TRUE"
 					fi
 
-					export olcMirrorModeDatabase="FALSE"
-					if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-						export olcMirrorModeDatabase="TRUE"
-					fi
-
-					log info "  - Updating Replication Config..." nw
+					log info "  - Updating Replication for Config..." nw
 					envsubst < $srcfile > $dstpath/$(basename $srcfile)
 					envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
 
@@ -362,6 +350,90 @@ if [ $firstRun -eq 1 ]; then
 					test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 				fi
 			fi
+
+			if [ $(echo "$file" | grep -ic "replication-db") -gt 0 ] && [ $(getBoolean $LDAP_REPLICATION_DB) -eq 1 ]; then
+				srcfile=/opt/openldap/ldifs/02-modify-replication-db.ldif
+				if [ -f $srcfile ]; then
+					dstpath=/tmp/ldifs
+					mkdir -p $dstpath
+
+					if [ "${LDAP_REPLICATION_DB_SYNCPROV}" == "" ]; then
+						continue
+					fi
+
+					olcSyncreplDatabase=""
+
+					idx=1
+					for replicationHost in $LDAP_REPLICATION_DB_HOSTS; do
+						sIdx=$(($idx + 100))
+						olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
+
+						idx=$(($idx + 1))
+					done
+
+					if [ "$olcSyncreplDatabase" == "" ]; then
+						continue
+					fi
+
+					export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
+
+					export olcMirrorModeDatabase="FALSE"
+					if [ $(getBoolean $LDAP_REPLICATION_DB_MIRROR_MODE) -eq 1 ]; then
+						export olcMirrorModeDatabase="TRUE"
+					fi
+
+					log info "  - Updating Replication for Database..." nw
+					envsubst < $srcfile > $dstpath/$(basename $srcfile)
+					envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+
+					out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
+					test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+				fi
+			fi
+
+#			if [ "$LDAP_REPLICATION" == "true" ]; then
+#				srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
+#				if [ -f $srcfile ]; then
+#					dstpath=/tmp/ldifs
+#					mkdir -p $dstpath
+#
+#					olcServerID=
+#					olcSyncreplConfig=""
+#					olcSyncreplDatabase=""
+#					idx=1
+#					for replicationHost in $LDAP_REPLICATION_HOSTS; do
+#						olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
+#
+#						sIdx=$(($idx + 100))
+#						olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
+#						olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
+#
+#						idx=$(($idx + 1))
+#					done
+#
+#					export olcServerID="$(echo -e ${olcServerID::-2})"
+#					export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
+#					export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
+#
+#					export olcMirrorModeConfig="FALSE"
+#					if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+#						export olcMirrorModeConfig="TRUE"
+#					fi
+#
+#					export olcMirrorModeDatabase="FALSE"
+#					if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+#						export olcMirrorModeDatabase="TRUE"
+#					fi
+#
+#					log info "  - Updating Replication Config..." nw
+#					envsubst < $srcfile > $dstpath/$(basename $srcfile)
+#					envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+#
+#					out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
+#					test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+#				fi
+#			fi
+
 			continue
 		fi
 
@@ -376,106 +448,88 @@ if [ $firstRun -eq 1 ]; then
 	kill -9 $(pidof slapd)
 	sleep 1
 else
-	# make updates...
-	log info "* Starting OpenLDAP in background to make updates..." nw
+	if [ $noUpdate -eq 0 ]; then
+		# make updates...
+		log info "* Starting OpenLDAP in background to make updates..." nw
 
-	test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
-    /usr/sbin/slapd -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
+		test $tlsEnabled -eq 1 && ldapS="ldaps:///"
+		/usr/sbin/slapd -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
 
-	st=$?
-	test $st -eq 0 && log ok " OK" || log error " Fail: (status: $st)\n"
+		st=$?
+		test $st -eq 0 && log ok " OK" || log error " Fail: (status: $st)\n"
 
-	dstpath=/tmp/ldifs
-	mkdir -p $dstpath
+		dstpath=/tmp/ldifs
+		mkdir -p $dstpath
 
-	# update TLS
-	if [ "$LDAP_TLS" == "true" ]; then
-		srcfile=/opt/openldap/ldifs/01-modify-tls.ldif
-		if [ -f $srcfile ]; then
-			log info "  - Updating TLS Certificates..." nw
-			envsubst < $srcfile > $dstpath/$(basename $srcfile)
-			out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
-			test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+		# update TLS
+		if [ $tlsEnabled -eq 1 ]; then
+			srcfile=/opt/openldap/ldifs/01-modify-tls.ldif
+			if [ -f $srcfile ]; then
+				log info "  - Updating TLS Certificates..." nw
+				envsubst < $srcfile > $dstpath/$(basename $srcfile)
+				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
+				test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+			fi
 		fi
-	fi
 
-	# replication
-	if [ "$LDAP_REPLICATION" == "true" ]; then
-		srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
+		# replication
+		if [ "$LDAP_REPLICATION" == "true" ]; then
+			srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
+			if [ -f $srcfile ]; then
+				olcServerID=
+				olcSyncreplConfig=""
+				olcSyncreplDatabase=""
+				idx=1
+				for replicationHost in $LDAP_REPLICATION_HOSTS; do
+					olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
+
+					sIdx=$(($idx + 100))
+					olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
+					olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
+
+					idx=$(($idx + 1))
+				done
+
+				export olcServerID="$(echo -e ${olcServerID::-2})"
+				export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
+				export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
+
+				export olcMirrorModeConfig="FALSE"
+				if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+					export olcMirrorModeConfig="TRUE"
+				fi
+
+				export olcMirrorModeDatabase="FALSE"
+				if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+					export olcMirrorModeDatabase="TRUE"
+				fi
+
+				log info "  - Updating Replication Config..." nw
+				envsubst < $srcfile > $dstpath/$(basename $srcfile)
+				envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
+				test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+			fi
+		fi
+
+		# update passwords
+		srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
 		if [ -f $srcfile ]; then
-			olcServerID=
-			olcSyncreplConfig=""
-			olcSyncreplDatabase=""
-			idx=1
-			for replicationHost in $LDAP_REPLICATION_HOSTS; do
-				olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
-
-				sIdx=$(($idx + 100))
-				olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
-				olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
-
-				idx=$(($idx + 1))
+			log info "  - Updating Passwords..." nw
+			for i in $(seq 0 25); do
+				envsubst < $srcfile > $dstpath/$(basename $srcfile)
+				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
+				ret=$?
+				test $ret -eq 0 && break || sleep 0.5
 			done
-
-			export olcServerID="$(echo -e ${olcServerID::-2})"
-			export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
-			export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
-
-			export olcMirrorModeConfig="FALSE"
-			if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-				export olcMirrorModeConfig="TRUE"
-			fi
-
-			export olcMirrorModeDatabase="FALSE"
-			if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-				export olcMirrorModeDatabase="TRUE"
-			fi
-
-			log info "  - Updating Replication Config..." nw
-			envsubst < $srcfile > $dstpath/$(basename $srcfile)
-			envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
-			out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
-			test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+			test $ret -eq 0 && log ok " OK" || log error " Fail: \n$out"
 		fi
+
+		rm -rf $dstpath
+
+		kill -9 $(pidof slapd)
+		sleep 1
 	fi
-
-	# update passwords
-	srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
-	if [ -f $srcfile ]; then
-		log info "  - Updating Passwords..." nw
-		for i in $(seq 0 25); do
-            envsubst < $srcfile > $dstpath/$(basename $srcfile)
-            out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
-            ret=$?
-            test $ret -eq 0 && break || sleep 0.5
-		done
-		test $ret -eq 0 && log ok " OK" || log error " Fail: \n$out"
-	fi
-
-	# update timeouts
-	srcfile=/opt/openldap/ldifs/06-modify-timeouts.ldif
-	if [ -f $srcfile ]; then
-		log info "  - Updating Timeouts..." nw
-		envsubst < $srcfile > $dstpath/$(basename $srcfile)
-		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
-		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
-	fi
-
-	# update threads
-	srcfile=/opt/openldap/ldifs/07-modify-threads.ldif
-	test -z "$ldapThreads" && rm -rf $srcfile
-	if [ -f $srcfile ]; then
-		log info "  - Updating Threads..." nw
-		envsubst < $srcfile > $dstpath/$(basename $srcfile)
-		out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
-		test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
-	fi
-
-	rm -rf $dstpath
-
-	kill -9 $(pidof slapd)
-	sleep 1
-
 fi
 rm -rf $openldapRun/*
 
@@ -486,7 +540,7 @@ if [ ! -f $ldapConf ]; then
 	log info "* Populating $ldapConf"
 	envsubst < $containerLdapConfDefault/ldap.conf > $ldapConf
 
-	if [ "$LDAP_TLS" == "true" ]; then
+	if [ $tlsEnabled -eq 1 ]; then
 		echo "# TLS Options" >> $ldapConf
 		echo "TLS_CACERT $openldapCerts/$LDAP_TLS_CACERT" >> $ldapConf
 		echo "TLS_REQCERT $LDAP_TLS_VERIFY_CLIENT" >> $ldapConf
@@ -496,7 +550,7 @@ fi
 log info "* Starting OpenLDAP..."
 log
 
-test "$LDAP_TLS" == "true" && ldapS="ldaps:///"
+test $tlsEnabled -eq 1 && ldapS="ldaps:///"
 /usr/sbin/slapd -d $LDAP_DEBUG_LEVEL -u ldap -g ldap -h "ldap:/// $ldapS ldapi:///"
 
 lockfile=/tmp/openldap-maintenance-mode.lock

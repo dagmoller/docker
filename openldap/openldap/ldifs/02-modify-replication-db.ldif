@@ -1,0 +1,7 @@
+dn: olcDatabase={1}mdb,cn=config
+changetype: modify
+replace: olcSyncrepl
+${olcSyncreplDatabase}
+-
+replace: olcMirrorMode
+olcMirrorMode: ${olcMirrorModeDatabase}

@@ -29,3 +29,11 @@ function log
 	esac
 }
 
+function getBoolean
+{
+	if [ "$(echo $1 | tr '[:upper:]' '[:lower:]')" == "true" ] || [ "$(echo $1 | tr '[:upper:]' '[:lower:]')" == "yes" ]; then
+		echo 1
+	else
+		echo 0
+	fi
+}
