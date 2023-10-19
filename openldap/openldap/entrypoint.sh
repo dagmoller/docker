@@ -390,50 +390,6 @@ if [ $firstRun -eq 1 ]; then
 					test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 				fi
 			fi
-
-#			if [ "$LDAP_REPLICATION" == "true" ]; then
-#				srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
-#				if [ -f $srcfile ]; then
-#					dstpath=/tmp/ldifs
-#					mkdir -p $dstpath
-#
-#					olcServerID=
-#					olcSyncreplConfig=""
-#					olcSyncreplDatabase=""
-#					idx=1
-#					for replicationHost in $LDAP_REPLICATION_HOSTS; do
-#						olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
-#
-#						sIdx=$(($idx + 100))
-#						olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
-#						olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
-#
-#						idx=$(($idx + 1))
-#					done
-#
-#					export olcServerID="$(echo -e ${olcServerID::-2})"
-#					export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
-#					export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
-#
-#					export olcMirrorModeConfig="FALSE"
-#					if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-#						export olcMirrorModeConfig="TRUE"
-#					fi
-#
-#					export olcMirrorModeDatabase="FALSE"
-#					if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-#						export olcMirrorModeDatabase="TRUE"
-#					fi
-#
-#					log info "  - Updating Replication Config..." nw
-#					envsubst < $srcfile > $dstpath/$(basename $srcfile)
-#					envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
-#
-#					out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
-#					test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
-#				fi
-#			fi
-
 			continue
 		fi
 
@@ -473,44 +429,112 @@ else
 		fi
 
 		# replication
-		if [ "$LDAP_REPLICATION" == "true" ]; then
-			srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
+		if [ $(getBoolean $LDAP_REPLICATION_CONFIG) -eq 1 ]; then
+			srcfile=/opt/openldap/ldifs/02-modify-replication-config.ldif
 			if [ -f $srcfile ]; then
+				dstpath=/tmp/ldifs
+				mkdir -p $dstpath
+
 				olcServerID=
 				olcSyncreplConfig=""
-				olcSyncreplDatabase=""
+
 				idx=1
-				for replicationHost in $LDAP_REPLICATION_HOSTS; do
+				for replicationHost in $LDAP_REPLICATION_CONFIG_HOSTS; do
 					olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
 
 					sIdx=$(($idx + 100))
 					olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
-					olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
 
 					idx=$(($idx + 1))
 				done
 
 				export olcServerID="$(echo -e ${olcServerID::-2})"
 				export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
-				export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
 
 				export olcMirrorModeConfig="FALSE"
-				if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+				if [ $(getBoolean $LDAP_REPLICATION_CONFIG_MIRROR_MODE) -eq 1 ]; then
 					export olcMirrorModeConfig="TRUE"
 				fi
 
-				export olcMirrorModeDatabase="FALSE"
-				if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-					export olcMirrorModeDatabase="TRUE"
-				fi
-
-				log info "  - Updating Replication Config..." nw
+				log info "  - Updating Replication for Config..." nw
 				envsubst < $srcfile > $dstpath/$(basename $srcfile)
 				envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+
 				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
 				test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
 			fi
 		fi
+
+		if [ $(getBoolean $LDAP_REPLICATION_DB) -eq 1 ]; then
+			srcfile=/opt/openldap/ldifs/02-modify-replication-db.ldif
+			if [ -f $srcfile ]; then
+				dstpath=/tmp/ldifs
+				mkdir -p $dstpath
+
+				olcSyncreplDatabase=""
+
+				idx=1
+				for replicationHost in $LDAP_REPLICATION_DB_HOSTS; do
+					sIdx=$(($idx + 100))
+					olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
+
+					idx=$(($idx + 1))
+				done
+
+				export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
+
+				export olcMirrorModeDatabase="FALSE"
+				if [ $(getBoolean $LDAP_REPLICATION_DB_MIRROR_MODE) -eq 1 ]; then
+					export olcMirrorModeDatabase="TRUE"
+				fi
+
+				log info "  - Updating Replication for Database..." nw
+				envsubst < $srcfile > $dstpath/$(basename $srcfile)
+				envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+
+				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
+				test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+			fi
+		fi
+
+#		if [ "$LDAP_REPLICATION" == "true" ]; then
+#			srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
+#			if [ -f $srcfile ]; then
+#				olcServerID=
+#				olcSyncreplConfig=""
+#				olcSyncreplDatabase=""
+#				idx=1
+#				for replicationHost in $LDAP_REPLICATION_HOSTS; do
+#					olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
+#
+#					sIdx=$(($idx + 100))
+#					olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
+#					olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
+#
+#					idx=$(($idx + 1))
+#				done
+#
+#				export olcServerID="$(echo -e ${olcServerID::-2})"
+#				export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
+#				export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
+#
+#				export olcMirrorModeConfig="FALSE"
+#				if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+#					export olcMirrorModeConfig="TRUE"
+#				fi
+#
+#				export olcMirrorModeDatabase="FALSE"
+#				if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
+#					export olcMirrorModeDatabase="TRUE"
+#				fi
+#
+#				log info "  - Updating Replication Config..." nw
+#				envsubst < $srcfile > $dstpath/$(basename $srcfile)
+#				envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
+#				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
+#				test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
+#			fi
+#		fi
 
 		# update passwords
 		srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
