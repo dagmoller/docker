@@ -55,6 +55,8 @@ export ldapBaseDN="dc=${LDAP_DOMAIN//\./,dc=}"
 export ldapDC="${LDAP_DOMAIN%%.*}"
 export ldapAdminPassword="$(slappasswd -s "$LDAP_ADMIN_PASSWORD")"
 export ldapConfigPassword="$(slappasswd -s "$LDAP_CONFIG_PASSWORD")"
+
+export ldapReadonlyUser=$LDAP_READONLY_USER
 export ldapReadonlyPassword="$(slappasswd -s "$LDAP_READONLY_PASSWORD")"
 
 if [ $tlsEnabled -eq 1 ]; then
@@ -302,6 +304,10 @@ if [ $firstRun -eq 1 ]; then
 			continue
 		fi
 
+		if [ $(echo "$file" | grep -ic "add-readonly-user") -gt 0 ] && [ "$ldapReadonlyUser" == "" ]; then
+			continue
+		fi
+
 		if [ $(echo "$file" | grep -ic "modify-passwords") -gt 0 ]; then
 			continue
 		fi
@@ -432,9 +438,6 @@ else
 		if [ $(getBoolean $LDAP_REPLICATION_CONFIG) -eq 1 ]; then
 			srcfile=/opt/openldap/ldifs/02-modify-replication-config.ldif
 			if [ -f $srcfile ]; then
-				dstpath=/tmp/ldifs
-				mkdir -p $dstpath
-
 				olcServerID=
 				olcSyncreplConfig=""
 
@@ -468,9 +471,6 @@ else
 		if [ $(getBoolean $LDAP_REPLICATION_DB) -eq 1 ]; then
 			srcfile=/opt/openldap/ldifs/02-modify-replication-db.ldif
 			if [ -f $srcfile ]; then
-				dstpath=/tmp/ldifs
-				mkdir -p $dstpath
-
 				olcSyncreplDatabase=""
 
 				idx=1
@@ -497,51 +497,15 @@ else
 			fi
 		fi
 
-#		if [ "$LDAP_REPLICATION" == "true" ]; then
-#			srcfile=/opt/openldap/ldifs/02-modify-replication.ldif
-#			if [ -f $srcfile ]; then
-#				olcServerID=
-#				olcSyncreplConfig=""
-#				olcSyncreplDatabase=""
-#				idx=1
-#				for replicationHost in $LDAP_REPLICATION_HOSTS; do
-#					olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
-#
-#					sIdx=$(($idx + 100))
-#					olcSyncreplConfig="${olcSyncreplConfig}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_CONFIG_SYNCPROV}\n"
-#					olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
-#
-#					idx=$(($idx + 1))
-#				done
-#
-#				export olcServerID="$(echo -e ${olcServerID::-2})"
-#				export olcSyncreplConfig="$(echo -e ${olcSyncreplConfig::-2})"
-#				export olcSyncreplDatabase="$(echo -e ${olcSyncreplDatabase::-2})"
-#
-#				export olcMirrorModeConfig="FALSE"
-#				if [ "$(echo $LDAP_REPLICATION_CONFIG_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-#					export olcMirrorModeConfig="TRUE"
-#				fi
-#
-#				export olcMirrorModeDatabase="FALSE"
-#				if [ "$(echo $LDAP_REPLICATION_DB_MIRROR_MODE | tr '[:upper:]' '[:lower:]')" == "true" ]; then
-#					export olcMirrorModeDatabase="TRUE"
-#				fi
-#
-#				log info "  - Updating Replication Config..." nw
-#				envsubst < $srcfile > $dstpath/$(basename $srcfile)
-#				envsubst < $dstpath/$(basename $srcfile) > $dstpath/$(basename $srcfile).ldif
-#				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile).ldif 2>&1)
-#				test $? -eq 0 && log ok " OK" || log error " Fail: \n$out"
-#			fi
-#		fi
-
 		# update passwords
 		srcfile=/opt/openldap/ldifs/05-modify-passwords.ldif
 		if [ -f $srcfile ]; then
 			log info "  - Updating Passwords..." nw
 			for i in $(seq 0 25); do
 				envsubst < $srcfile > $dstpath/$(basename $srcfile)
+				if [ "$ldapReadonlyUser" != "" ]; then
+					sed -e 's/#READONLY_USER //g' -i $dstpath/$(basename $srcfile)
+				fi
 				out=$(ldapmodify -Q -H ldapi:/// -Y EXTERNAL -f $dstpath/$(basename $srcfile) 2>&1)
 				ret=$?
 				test $ret -eq 0 && break || sleep 0.5
