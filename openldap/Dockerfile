@@ -7,14 +7,13 @@
 #
 # Alpine 3.14 + OpenLDAP 2.4.58
 # Alpine 3.17 + OpenLDAP 2.6.3
+# Alpine 3.20 + OpenLDAP 2.6.7
 #
 
-ARG AlpineVersion=3.14
-ARG ContainerVersion=3.14-2.4.58r0-v2.0
+ARG AlpineVersion=3.20
+ARG ContainerVersion=3.20-2.6.7r0-r001
 
 FROM alpine:${AlpineVersion}
-
-ARG ContainerVersion=1.0.1
 
 ADD openldap /opt/openldap
 
@@ -30,11 +29,11 @@ ENV LDAP_DEBUG_LEVEL=256 \
 	LDAP_GROUP_MEMBER_SET_MAY="false" \
 	\
 	LDAP_TLS="true" \
-	LDAP_TLS_CACERT="default-ca.crt" \
-	LDAP_TLS_CACERT_KEY="default-ca.key" \
-	LDAP_TLS_CERT_FILE="openldap.crt" \
+	LDAP_TLS_CA_CRT="default-ca.crt" \
+	LDAP_TLS_CA_KEY="default-ca.key" \
+	LDAP_TLS_CA_CRL="default-ca.crl" \
+	LDAP_TLS_CERT_CRT="openldap.crt" \
 	LDAP_TLS_CERT_KEY="openldap.key" \
-	LDAP_TLS_CRL_FILE="openldap.crl" \
 	LDAP_TLS_DH_FILE="dhparams.pem" \
 	LDAP_TLS_CRL_CHECK="all" \
 	LDAP_TLS_VERIFY_CLIENT="try" \
@@ -68,4 +67,4 @@ RUN apk update; \
 
 EXPOSE 389 636
 
-ENTRYPOINT "/opt/openldap/entrypoint.sh"
+ENTRYPOINT ["/opt/openldap/entrypoint.sh"]

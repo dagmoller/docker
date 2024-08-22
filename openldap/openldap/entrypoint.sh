@@ -67,18 +67,18 @@ if [ $tlsEnabled -eq 1 ]; then
 	defaultRootCACert=$containerCertsDefault/default-ca.crt
 	defaultRootCAKey=$containerCertsDefault/default-ca.key
 
-	providedCACert=$containerCerts/$LDAP_TLS_CACERT
-	providedCAKey=$containerCerts/$LDAP_TLS_CACERT_KEY
+	providedCACert=$containerCerts/$LDAP_TLS_CA_CRT
+	providedCAKey=$containerCerts/$LDAP_TLS_CA_KEY
 	providedCertKey=$containerCerts/$LDAP_TLS_CERT_KEY
-	providedCertFile=$containerCerts/$LDAP_TLS_CERT_FILE
-	providedCrlFile=$containerCerts/$LDAP_TLS_CRL_FILE
+	providedCertFile=$containerCerts/$LDAP_TLS_CERT_CRT
+	providedCrlFile=$containerCerts/$LDAP_TLS_CA_CRL
 	providedDHFile=$containerCerts/$LDAP_TLS_DH_FILE
 
-	export finalCACert=$containerCertsOK/$LDAP_TLS_CACERT
-	export finalCAKey=$containerCertsOK/$LDAP_TLS_CACERT_KEY
+	export finalCACert=$containerCertsOK/$LDAP_TLS_CA_CRT
+	export finalCAKey=$containerCertsOK/$LDAP_TLS_CA_KEY
 	export finalCertKey=$containerCertsOK/$LDAP_TLS_CERT_KEY
-	export finalCertFile=$containerCertsOK/$LDAP_TLS_CERT_FILE
-	export finalCrlFile=$containerCertsOK/$LDAP_TLS_CRL_FILE
+	export finalCertFile=$containerCertsOK/$LDAP_TLS_CERT_CRT
+	export finalCrlFile=$containerCertsOK/$LDAP_TLS_CA_CRL
 	export finalDHFile=$containerCertsOK/$LDAP_TLS_DH_FILE
 
 	buildCertPath=$(mktemp -d)
@@ -189,7 +189,7 @@ if [ $tlsEnabled -eq 1 ]; then
 		export altNamesDNS=$(echo -e $tlsDNS)
 		envsubst < $serverExt > ${serverExt}.ok
 
-		log info "  - Signing Server certificate with our Root CA $LDAP_TLS_CACERT..." nw
+		log info "  - Signing Server certificate with our Root CA $LDAP_TLS_CA_CRT..." nw
 
 		out=$(openssl ca -batch -keyfile $rootCAKey -cert $rootCACrt -in $serverCsr -out $serverCrt -days $((365*10)) \
 			-extensions req_ext -extfile ${serverExt}.ok -config $opensslCnf 2>&1)
@@ -530,7 +530,7 @@ if [ ! -f $ldapConf ]; then
 
 	if [ $tlsEnabled -eq 1 ]; then
 		echo "# TLS Options" >> $ldapConf
-		echo "TLS_CACERT $openldapCerts/$LDAP_TLS_CACERT" >> $ldapConf
+		echo "TLS_CACERT $openldapCerts/$LDAP_TLS_CA_CRT" >> $ldapConf
 		echo "TLS_REQCERT $LDAP_TLS_VERIFY_CLIENT" >> $ldapConf
 	fi
 fi
