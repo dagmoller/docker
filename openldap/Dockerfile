@@ -7,11 +7,11 @@
 #
 # Alpine 3.14 + OpenLDAP 2.4.58
 # Alpine 3.17 + OpenLDAP 2.6.3
-# Alpine 3.20 + OpenLDAP 2.6.7
+# Alpine 3.20 + OpenLDAP 2.6.8
 #
 
 ARG AlpineVersion=3.20
-ARG ContainerVersion=3.20-2.6.7r0-r001
+ARG ContainerVersion=3.20-2.6.8r0-r001
 
 FROM alpine:${AlpineVersion}
 

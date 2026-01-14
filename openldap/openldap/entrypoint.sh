@@ -313,6 +313,7 @@ if [ $firstRun -eq 1 ]; then
 		fi
 
 		if [ $(echo "$file" | grep -ic "replication") -gt 0 ]; then
+			baseIdx=${LDAP_REPLICATION_BASEID:-1}
 			if [ $(echo "$file" | grep -ic "replication-config") -gt 0 ] && [ $(getBoolean $LDAP_REPLICATION_CONFIG) -eq 1 ]; then
 				srcfile=/opt/openldap/ldifs/02-modify-replication-config.ldif
 				if [ -f $srcfile ]; then
@@ -326,7 +327,7 @@ if [ $firstRun -eq 1 ]; then
 					olcServerID=
 					olcSyncreplConfig=""
 
-					idx=1
+					idx=$baseIdx
 					for replicationHost in $LDAP_REPLICATION_CONFIG_HOSTS; do
 						olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
 
@@ -369,7 +370,7 @@ if [ $firstRun -eq 1 ]; then
 
 					olcSyncreplDatabase=""
 
-					idx=1
+					idx=$baseIdx
 					for replicationHost in $LDAP_REPLICATION_DB_HOSTS; do
 						sIdx=$(($idx + 100))
 						olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
@@ -435,13 +436,14 @@ else
 		fi
 
 		# replication
+		baseIdx=${LDAP_REPLICATION_BASEID:-1}
 		if [ $(getBoolean $LDAP_REPLICATION_CONFIG) -eq 1 ]; then
 			srcfile=/opt/openldap/ldifs/02-modify-replication-config.ldif
 			if [ -f $srcfile ]; then
 				olcServerID=
 				olcSyncreplConfig=""
 
-				idx=1
+				idx=$baseIdx
 				for replicationHost in $LDAP_REPLICATION_CONFIG_HOSTS; do
 					olcServerID="${olcServerID}olcServerID: ${idx} ${replicationHost}\n"
 
@@ -473,7 +475,7 @@ else
 			if [ -f $srcfile ]; then
 				olcSyncreplDatabase=""
 
-				idx=1
+				idx=$baseIdx
 				for replicationHost in $LDAP_REPLICATION_DB_HOSTS; do
 					sIdx=$(($idx + 100))
 					olcSyncreplDatabase="${olcSyncreplDatabase}olcSyncrepl: rid=${idx} provider=${replicationHost} ${LDAP_REPLICATION_DB_SYNCPROV}\n"
